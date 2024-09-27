@@ -1,13 +1,7 @@
-#!/usr/bin/env python3
-
 import argparse
 import os
 
 from utils import run_proc_simple
-
-
-hugepage_size_kb = 1048576
-# hugepage_size_kb = 2048
 
 
 def get_autonuma_sysfs() -> str:
@@ -41,24 +35,16 @@ def main(args):
 
 
 def init_parser():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     subparsers = parser.add_subparsers(dest="command")
     topics = {
         "autonuma": "NUMA balancing",
     }
     for command, message in topics.items():
         cmd_parser = subparsers.add_parser(command, help=message)
-        cmd_parser.add_argument(
-            "--check", "-c", action="store_true", help="check current setting"
-        )
-        cmd_parser.add_argument(
-            "--setup", "-s", action="store_true", help="setup setting"
-        )
-        cmd_parser.add_argument(
-            "--reset", "-r", action="store_true", help="disable setting"
-        )
+        cmd_parser.add_argument("--check", "-c", action="store_true", help="check current setting")
+        cmd_parser.add_argument("--setup", "-s", action="store_true", help="setup setting")
+        cmd_parser.add_argument("--reset", "-r", action="store_true", help="disable setting")
     return parser
 
 

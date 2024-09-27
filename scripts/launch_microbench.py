@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import argparse
 import json
 import signal
@@ -64,12 +62,8 @@ def main(args):
 
 
 def init_parser():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    parser.add_argument(
-        "--job", "-j", type=str, required=True, help="json file describing jobs"
-    )
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--job", "-j", type=str, required=True, help="json file describing jobs")
     return parser
 
 

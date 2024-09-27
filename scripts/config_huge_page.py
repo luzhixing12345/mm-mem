@@ -1,21 +1,36 @@
-#!/usr/bin/env python3
-
 import argparse
 import os
 from typing import Dict, List
-
+from enum import Enum
 from print_host_info import color_str, get_mem_info
 from utils import run_proc_simple
 
 
-hugepage_size_kb = 1048576
+class HugePageSize(Enum):
+    HP_2MB = 2048
+    HP_512MB = 524288
+    HP_1GB = 1048576
+    HP_16GB = 16777216
 
 
 def get_huge_page_sysfs(nid: int, size: int) -> str:
-    return (
-        f"/sys/devices/system/node/node{nid}/"
-        + f"hugepages/hugepages-{size}kB/nr_hugepages"
-    )
+    return f"/sys/devices/system/node/node{nid}/" + f"hugepages/hugepages-{size}kB/nr_hugepages"
+
+
+def human_read_pagesize(size: int):
+    """
+    human readable size, kb -> mb/gb
+    """
+    assert size >= 0 and size % 1024 == 0
+
+    if size < 1024:
+        return f"{size}KB"
+    elif size < 1024 * 1024:
+        return f"{size / 1024}MB"
+    elif size < 1024 * 1024 * 1024:
+        return f"{size / (1024 * 1024)}GB"
+    else:
+        return None
 
 
 def get_huge_page_sizes() -> List[int]:
@@ -55,9 +70,9 @@ def check_huge_pages(post_fix: str = "") -> Dict[int, List[int]]:
     return huge_page_state
 
 
-def setup_huge_pages() -> (bool, int):
+def setup_huge_pages(hp_size: HugePageSize):
     mem_nodes = get_mem_info(do_print=False)
-    target_size = pick_huge_page_size()
+    target_size = hp_size.value
     if target_size == 0:
         print(color_str(f"Fail to get a valid huge page size", 31))
     target_num = int(2 * 1024 * 1024 / target_size)
@@ -74,7 +89,6 @@ def setup_huge_pages() -> (bool, int):
         cmd = ["echo", str(target_num), ">", get_huge_page_sysfs(nid, target_size)]
         os.system(" ".join(cmd))
     # check
-    all_good = True
     huge_page_state = check_huge_pages(color_str("after", 33))
     for size in huge_page_state:
         if target_size != size:
@@ -82,8 +96,9 @@ def setup_huge_pages() -> (bool, int):
         for nid in range(len(huge_page_state[size])):
             if mem_nodes[nid] >= 2 and huge_page_state[size][nid] < target_num:
                 print(color_str(f"Fail to reserve huge pages on Node-{nid}", 31))
-                all_good = False
-    return (all_good, target_size)
+                return False
+
+    return True
 
 
 def reset_huge_pages(huge_page_state: Dict[int, List[int]]):
@@ -105,24 +120,14 @@ def main(args):
     if args.setup:
         setup_huge_pages()
     if args.reset:
-        reset_huge_pages(
-            {pick_huge_page_size(): [0 for _ in get_mem_info(do_print=False)]}
-        )
+        reset_huge_pages({pick_huge_page_size(): [0 for _ in get_mem_info(do_print=False)]})
 
 
 def init_parser():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    parser.add_argument(
-        "--check", "-c", action="store_true", help="check current hugepage setup"
-    )
-    parser.add_argument(
-        "--setup", "-s", action="store_true", help="reserve 2x 1GB huge pages per node"
-    )
-    parser.add_argument(
-        "--reset", "-r", action="store_true", help="un-reserve all 1GB huge pages"
-    )
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--check", "-c", action="store_true", help="check current hugepage setup")
+    parser.add_argument("--setup", "-s", action="store_true", help="reserve 2x 1GB huge pages per node")
+    parser.add_argument("--reset", "-r", action="store_true", help="un-reserve all 1GB huge pages")
     return parser
 
 

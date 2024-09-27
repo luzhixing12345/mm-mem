@@ -1,5 +1,5 @@
 default:
-	cmake -B build/release -DCMAKE_INSTALL_PREFIX=$(shell pwd) -DCMAKE_BUILD_TYPE=Release ./
+	cmake -B build/release -DCMAKE_INSTALL_PREFIX=$(shell pwd) -DCMAKE_BUILD_TYPE=Release ./ -DCMAKE_EXPORT_COMPILE_COMMANDS=1
 	make install -j${nproc} -C build/release
 
 debug:

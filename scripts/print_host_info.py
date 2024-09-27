@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from utils import run_proc_simple
 
 

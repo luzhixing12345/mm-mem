@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import argparse
 import os
 
@@ -33,9 +31,7 @@ def main(args):
 
 
 def init_parser():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "--hostname",
         "-r",
@@ -43,9 +39,7 @@ def init_parser():
         required=True,
         help="target hostname; comma-separated for multiple hosts",
     )
-    parser.add_argument(
-        "--target-path", "-t", type=str, default="~/", help="target path"
-    )
+    parser.add_argument("--target-path", "-t", type=str, default="~/", help="target path")
     parser.add_argument("--download", "-d", action="store_true", help="download")
     return parser
 

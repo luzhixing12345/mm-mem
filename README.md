@@ -11,7 +11,7 @@ make
 
 ### Run All Tests
 ```
-./scripts/run_cpu_micro.py
+sudo ./scripts/run_cpu_micro.py
 ```
 
 #### Example Output

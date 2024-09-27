@@ -4,3 +4,7 @@ build/
 bin/
 
 *.swp
+.cache
+compile_commands.json
+a.py
+*.png
