@@ -8,3 +8,4 @@ bin/
 compile_commands.json
 a.py
 *.png
+results

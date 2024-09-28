@@ -3,15 +3,16 @@ Memory benchmarking and characterization tools
 
 ## Build
 ```
-./scripts/install_deps.py
+python3 ./scripts/install_deps.py
 make
+pip install paperplotlib
 ```
 
 ## Run
 
 ### Run All Tests
 ```
-sudo ./scripts/run_cpu_micro.py
+./run.sh
 ```
 
 #### Example Output

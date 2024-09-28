@@ -8,9 +8,16 @@ from config_sysfs_settings import check_autonuma, setup_autonuma
 from print_host_info import color_str, get_cpu_info, get_mem_info
 from utils import read_env
 import subprocess
-from parse_output import parse_idle_latency_output, parse_bandwidth_output, parse_loaded_latency_output
-from draw import *
 
+def save_file(stdouts: List[str], filename: str):
+    if not os.path.exists('results'):
+        os.mkdir('results')
+        
+    with open(os.path.join('results', filename), 'w') as fp:
+        for stdout in stdouts:
+            fp.write('[start]\n')
+            fp.write(stdout)
+            fp.write('[end]\n')
 
 def get_huge_page_mapping(size: int) -> int:
     if size == (2 << 10):
@@ -43,9 +50,9 @@ def run_idle_latency(huge_page_state: Dict[int, List[int]]):
         "-t",
         str(args.target_duration),
     ]
-    stdout = subprocess.check_output(" ".join(cmd), shell=True)
-    basic_idle_latency = parse_idle_latency_output(stdout.decode("utf-8"))
-    latency_results.append(basic_idle_latency)
+    stdout = subprocess.check_output(" ".join(cmd), shell=True).decode("utf-8")
+    print(stdout)
+    latency_results.append(stdout)
 
     # using huge page
     print(color_str("---- Running Idle Latency test with huge pages ...", 32))
@@ -67,25 +74,26 @@ def run_idle_latency(huge_page_state: Dict[int, List[int]]):
             "-H",
             str(get_huge_page_mapping(size)),
         ]
-        stdout = subprocess.check_output(" ".join(cmd), shell=True)
-        latency_results.append(parse_idle_latency_output(stdout.decode("utf-8")))
+        stdout = subprocess.check_output(" ".join(cmd), shell=True).decode("utf-8")
+        print(stdout)
+        latency_results.append(stdout)
         reset_huge_pages(huge_page_state)
 
-    return latency_results
+    save_file(latency_results, 'cpu_idle_latency.txt')
 
 
 def run_peak_bandwidth(num_numa_nodes: int):
 
     peak_bandwith_results = []
 
-    print(color_str("---- Running Peak Bandwidth test ...", 32))
-    sys.stdout.flush()
-    cmd = [
-        get_bin_path("cpu_peak_bandwidth"),
-        "-t",
-        str(args.target_duration),
-    ]
-    os.system(" ".join(cmd))
+    # print(color_str("---- Running Peak Bandwidth test ...", 32))
+    # sys.stdout.flush()
+    # cmd = [
+    #     get_bin_path("cpu_peak_bandwidth"),
+    #     "-t",
+    #     str(args.target_duration),
+    # ]
+    # os.system(" ".join(cmd))
     if num_numa_nodes > 0:
         # 0 - all reads
         # 1 - 1:1 read/write
@@ -109,10 +117,11 @@ def run_peak_bandwidth(num_numa_nodes: int):
                 "-m",
                 str(i),
             ]
-            stdout = subprocess.check_output(" ".join(cmd), shell=True)
-            peak_bandwith_results.append(parse_bandwidth_output(stdout.decode("utf-8")))
+            stdout = subprocess.check_output(" ".join(cmd), shell=True).decode("utf-8")
+            print(stdout)
+            peak_bandwith_results.append(stdout)
 
-    return peak_bandwith_results
+    save_file(peak_bandwith_results, 'cpu_peak_bandwidth.txt')
 
 
 def run_memcpy(num_numa_nodes: int):
@@ -142,7 +151,7 @@ class AccessPattern(Enum):
     RANDOM_IN_FULL_REGION = 2
 
 
-def run_loaded_latency(huge_page_state: Dict[int, List[int]], access_pattern: AccessPattern):
+def run_loaded_latency(huge_page_state: Dict[int, List[int]], access_pattern: AccessPattern=AccessPattern.RANDOM_IN_CHUNK):
 
     loaded_latency_results = []
 
@@ -157,8 +166,9 @@ def run_loaded_latency(huge_page_state: Dict[int, List[int]], access_pattern: Ac
         str(access_pattern.value)
     ]
 
-    stdout = subprocess.check_output(" ".join(cmd), shell=True)
-    loaded_latency_results.append(parse_loaded_latency_output(stdout.decode("utf-8")))
+    stdout = subprocess.check_output(" ".join(cmd), shell=True).decode("utf-8")
+    print(stdout)
+    loaded_latency_results.append(stdout)
 
     # using huge page
     print(color_str("---- Running Loaded Latency test with huge pages ...", 32))
@@ -181,11 +191,12 @@ def run_loaded_latency(huge_page_state: Dict[int, List[int]], access_pattern: Ac
             str(get_huge_page_mapping(size)),
         ]
 
-        stdout = subprocess.check_output(" ".join(cmd), shell=True)
-        loaded_latency_results.append(parse_loaded_latency_output(stdout.decode("utf-8")))
+        stdout = subprocess.check_output(" ".join(cmd), shell=True).decode("utf-8")
+        print(stdout)
+        loaded_latency_results.append()
         reset_huge_pages(huge_page_state)
 
-    return loaded_latency_results
+    save_file(loaded_latency_results, 'cpu_loaded_latency.txt')
 
 
 def init_parser():
@@ -212,15 +223,12 @@ def main(args):
     print(color_str("-------- Running MM-Mem --------", 35))
     sys.stdout.flush()
     if args.test is None or "idle_latency" in args.test:
-        latency_results = run_idle_latency(huge_page_state)
-        draw_idle_latency(latency_results)
+        run_idle_latency(huge_page_state)
     if args.test is None or "bandwidth" in args.test:
-        peak_bandwidth_results = run_peak_bandwidth(num_numa_nodes)
-        draw_bandwidth(peak_bandwidth_results)
+        run_peak_bandwidth(num_numa_nodes)
         # run_memcpy(num_numa_nodes)
     if args.test is None or "loaded_latency" in args.test:
-        latency_results = run_loaded_latency(huge_page_state)
-        draw_loaded_latency(latency_results)
+        run_loaded_latency(huge_page_state)
     if autonuma_state > 0:
         setup_autonuma(value=autonuma_state)
 
